@@ -214,7 +214,7 @@ class MegatronParallel(nn.ModuleList, Generic[ModelT]):
                     parallel_state.set_virtual_pipeline_model_parallel_rank(i)
                     _model = io.reinit(_pipeline[0])
                     if hasattr(_model, "configure_model"):
-                        _model.configure_model()
+                        _model.configure_model(vp_stage=i)
                     _pipeline.append(_model)
 
         super().__init__(_pipeline)
@@ -505,7 +505,7 @@ class MegatronParallel(nn.ModuleList, Generic[ModelT]):
                 forward_callback=forward_callback,
             )
 
-            if self.precision_plugin and parallel_state.is_pipeline_first_stage(ignore_virtual=False):
+            if self.precision_plugin and parallel_state.is_pipeline_first_stage(ignore_virtual=False, vp_stage=model.vp_stage):
                 batch = self.precision_plugin.convert_input(batch)
 
             output_tensor = _forward_step(model, batch)
@@ -519,7 +519,7 @@ class MegatronParallel(nn.ModuleList, Generic[ModelT]):
                 tensor=output_tensor,
             )
 
-            if self.precision_plugin and parallel_state.is_pipeline_last_stage(ignore_virtual=False):
+            if self.precision_plugin and parallel_state.is_pipeline_last_stage(ignore_virtual=False, vp_stage=model.vp_stage):
                 output_tensor = self.precision_plugin.convert_output(output_tensor)
 
             self.callbacks.event(
@@ -804,7 +804,7 @@ class _ModuleStepFunction:
     def from_forward_step(cls, module: "pl.LightningModule", step_type: str) -> Optional["_ModuleStepFunction"]:
         from megatron.core import parallel_state
 
-        if parallel_state.is_pipeline_last_stage(ignore_virtual=False):
+        if parallel_state.is_pipeline_last_stage(ignore_virtual=False, vp_stage=getattr(module, 'vp_stage', None)):
             if not hasattr(module, f"{step_type}_step"):
                 raise ValueError(f"LightningModule does not have {step_type}_step method")
 

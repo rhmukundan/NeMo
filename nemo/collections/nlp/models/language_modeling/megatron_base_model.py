@@ -1390,3 +1390,7 @@ class MegatronBaseModel(NLPModel):
         self.megatron_timer_start('optimizer', log_level=1)
         super().optimizer_step(*args, **kwargs)
         self.megatron_timer_stop('optimizer')
+
+    @property
+    def enable_virtual_pipeline_model_parallel(self):
+        return self.cfg.get('virtual_pipeline_model_parallel_size', None) is not None

@@ -89,9 +89,9 @@ def gpt_data_step(dataloader_iter, use_mtp=False) -> dict[str, torch.Tensor]:
         required_host_keys.add("cu_seqlens_argmin")
         required_host_keys.add("max_seqlen")
 
-    if parallel_state.is_pipeline_first_stage(ignore_virtual=False) or use_mtp:
+    if parallel_state.is_pipeline_first_stage(ignore_virtual=True) or use_mtp:
         required_device_keys.update(("tokens", "position_ids"))
-    if parallel_state.is_pipeline_last_stage(ignore_virtual=False):
+    if parallel_state.is_pipeline_last_stage(ignore_virtual=True):
         required_device_keys.update(("labels", "loss_mask"))
 
     _batch_required_keys = {}
@@ -307,7 +307,7 @@ class GPTConfig(TransformerConfig, io.IOMixin):
     vocab_size: Optional[int] = None
     tp_comm_overlap_cfg: Optional[Union[str, dict[str, Any]]] = None
 
-    def configure_model(self, tokenizer, pre_process=None, post_process=None) -> "MCoreGPTModel":
+    def configure_model(self, tokenizer, pre_process=None, post_process=None, vp_stage=None) -> "MCoreGPTModel":
         """Configure and instantiate a Megatron Core GPT model based on this configuration.
 
         Args:
@@ -375,9 +375,10 @@ class GPTConfig(TransformerConfig, io.IOMixin):
                 rotary_percent=self.rotary_percent,
                 rotary_base=self.rotary_base,
                 seq_len_interpolation_factor=self.seq_len_interpolation_factor,
-                pre_process=pre_process or parallel_state.is_pipeline_first_stage(ignore_virtual=False),
-                post_process=post_process or parallel_state.is_pipeline_last_stage(ignore_virtual=False),
+                pre_process=pre_process or parallel_state.is_pipeline_first_stage(ignore_virtual=False, vp_stage=vp_stage),
+                post_process=post_process or parallel_state.is_pipeline_last_stage(ignore_virtual=False, vp_stage=vp_stage),
                 scatter_embedding_sequence_parallel=self.scatter_embedding_sequence_parallel,
+                vp_stage=vp_stage,
                 **kwargs,
             )
 
@@ -559,7 +560,7 @@ class GPTModel(L.LightningModule, io.IOMixin, io.ConnectorMixin, fn.FNMixin):
         self._training_loss_reduction = None
         self._validation_loss_reduction = None
 
-    def configure_model(self) -> None:
+    def configure_model(self, vp_stage=None) -> None:
         """Configure the underlying model if not already configured.
 
         This method ensures the model is instantiated from the configuration.
@@ -570,7 +571,7 @@ class GPTModel(L.LightningModule, io.IOMixin, io.ConnectorMixin, fn.FNMixin):
                 for cm in self.model_context_managers:
                     stack.enter_context(cm)
 
-                self.module = self.config.configure_model(self.tokenizer)
+                self.module = self.config.configure_model(self.tokenizer, vp_stage=vp_stage)
 
     def forward(
         self,
