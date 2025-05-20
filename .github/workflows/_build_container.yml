@@ -15,7 +15,7 @@ on:
         type: string
         description: "The runner to use for the build"
     secrets:
-      github-token:
+      GH_TOKEN:
         required: false
 
 jobs:
@@ -91,4 +91,4 @@ jobs:
         ${{ needs.pre-flight.outputs.cache-from }}
       runner: ${{ inputs.runner }}
     secrets:
-      GITHUB_TOKEN: ${{ secrets.github-token }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}

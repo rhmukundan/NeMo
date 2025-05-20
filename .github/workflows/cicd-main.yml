@@ -161,7 +161,7 @@ jobs:
       image-name: nemo_container
       dockerfile: docker/Dockerfile.ci
     secrets:
-      github-token: ${{ secrets.PAT }}
+      GH_TOKEN: ${{ secrets.PAT }}
 
   cicd-import-tests:
     if: |
