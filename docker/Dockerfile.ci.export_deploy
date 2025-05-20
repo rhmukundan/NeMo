@@ -85,10 +85,13 @@ RUN \
   --mount=type=bind,source=external/patches,target=/tmp/NeMo/external/patches \
   --mount=type=bind,source=README.md,target=/tmp/NeMo/README.md \
   --mount=type=bind,source=nemo/package_info.py,target=/tmp/NeMo/nemo/package_info.py \
-  --mount=type=bind,source=nemo/__init__.py,target=/tmp/NeMo/nemo/__init__.py <<"EOF" bash -ex
+  --mount=type=bind,source=nemo/__init__.py,target=/tmp/NeMo/nemo/__init__.py \
+  --mount=type=secret,id=PAT,env=PAT \
+  <<"EOF" bash -ex
 
     bash /tmp/NeMo/install_dep.sh --library all --mode install
     pip install --no-cache-dir ".[deploy,test]"
+    pip install --no-cache-dir git+https://user:${PAT}@github.com/NVIDIA/NeMo-Export-Deploy.git@main
     rm -rf $NEMO_DIR || true
 EOF
 

@@ -14,6 +14,9 @@ on:
         default: self-hosted-azure-builder
         type: string
         description: "The runner to use for the build"
+    secrets:
+      PAT:
+        required: false
 
 jobs:
   pre-flight:
@@ -68,7 +71,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
   build:
-    uses: NVIDIA/NeMo-FW-CI-templates/.github/workflows/_build_container.yml@v0.27.0
+    uses: NVIDIA/NeMo-FW-CI-templates/.github/workflows/_build_container.yml@ko3n1g/feat/build-secrets
     needs: [pre-flight]
     with:
       image-name: ${{ inputs.image-name }}
@@ -87,3 +90,5 @@ jobs:
         nemoci.azurecr.io/${{ inputs.image-name }}-buildcache:${{ github.event.pull_request.number || 0 }}
         ${{ needs.pre-flight.outputs.cache-from }}
       runner: ${{ inputs.runner }}
+      secrets: |
+        PAT=${{ secrets.PAT }}
