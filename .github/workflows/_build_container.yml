@@ -14,10 +14,9 @@ on:
         default: self-hosted-azure-builder
         type: string
         description: "The runner to use for the build"
-      PAT:
+    secrets:
+      github-token:
         required: false
-        type: string
-        description: "The PAT to use for the build"
 
 jobs:
   pre-flight:
@@ -91,5 +90,5 @@ jobs:
         nemoci.azurecr.io/${{ inputs.image-name }}-buildcache:${{ github.event.pull_request.number || 0 }}
         ${{ needs.pre-flight.outputs.cache-from }}
       runner: ${{ inputs.runner }}
-      secrets: |
-        PAT=${{ inputs.PAT }}
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.github-token }}
