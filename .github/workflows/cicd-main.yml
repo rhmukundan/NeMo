@@ -160,7 +160,6 @@ jobs:
     with:
       image-name: nemo_container
       dockerfile: docker/Dockerfile.ci
-    secrets:
       PAT: ${{ secrets.PAT }}
 
   cicd-import-tests:
